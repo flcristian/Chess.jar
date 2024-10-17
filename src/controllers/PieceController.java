@@ -2,15 +2,19 @@ package controllers;
 
 import enums.PieceColor;
 import models.pieces.*;
+import models.utils.Position;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class PieceController {
     private List<Piece> pieceList;
+    private Piece movingPiece;
 
     PieceController() {
         pieceList = new ArrayList<>();
+        movingPiece = null;
     }
 
     // ACCESSORS
@@ -30,7 +34,43 @@ public class PieceController {
         initializeKings();
     }
 
+    public boolean tryMovePiece(Position position) {
+        AtomicBoolean moved = new AtomicBoolean(false);
+        pieceList.stream()
+                .filter(piece -> piece.Position.equals(position))
+                .findFirst()
+                .ifPresentOrElse(
+                        piece -> {
+                            if(movingPiece == null ) {
+                                movingPiece = piece;
+                                System.out.println("New Moving Piece: " + movingPiece.Position);
+                            }
+                            else {
+                                movingPiece = null;
+                                System.out.println("Cancelled movement.");
+                            }
+                        },
+                        () -> {
+                            if(movingPiece != null) {
+                                movePiece(movingPiece, position);
+                                moved.set(true);
+                            }
+                        }
+                );
+        return moved.get();
+    }
+
     // PRIVATE METHODS
+
+    private void movePiece(Piece piece, Position position) {
+        for (Piece p : pieceList) {
+            if (p.equals(piece)) {
+                p.Position = position;
+                movingPiece = null;
+                return;
+            }
+        }
+    }
 
     private void initializePawns() {
         for(int i = 0; i < 8; i++) {

@@ -16,4 +16,12 @@ public abstract class Piece {
     }
 
     abstract boolean isValidMove(Position position);
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof Piece p) {
+            return p.Position.equals(Position) && p.Color.equals(Color) && p.Type.equals(Type);
+        }
+        return false;
+    }
 }

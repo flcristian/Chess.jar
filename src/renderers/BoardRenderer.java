@@ -11,9 +11,6 @@ public class BoardRenderer {
     }
 
     public void RenderBoard() {
-        g2d.setColor(Color.black);
-        g2d.fillRect(0, 0, Globals.WINDOW_SIZE, Globals.WINDOW_SIZE);
-
         boolean colorSwitcher = true;
         for(int i = 0; i < 8; i++) {
             for(int j = 0; j < 8; j++) {

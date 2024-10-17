@@ -3,8 +3,7 @@ package enums;
 public enum PieceType {
     PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING;
 
-    public char getPieceChar(PieceColor pieceColor) {
-        boolean isWhite = pieceColor.equals(PieceColor.WHITE);
+    public char getPieceChar() {
         return switch (this) {
             case KING -> '♚';
             case QUEEN -> '♛';

@@ -22,7 +22,7 @@ public class PieceRenderer {
     public void renderPiece(PieceType pieceType, PieceColor pieceColor, int boardX, int boardY) {
         int posX = 56 + (boardX * 112);
         int posY = 56 + (boardY * 112);
-        char pieceChar = pieceType.getPieceChar(pieceColor);
+        char pieceChar = pieceType.getPieceChar();
         String pieceString = String.valueOf(pieceChar);
 
         Font originalFont = g2d.getFont();
