@@ -10,7 +10,8 @@ public class Bishop extends Piece {
     }
 
     @Override
-    public boolean isValidMove(models.utils.Position position) {
-        return false;
+    public boolean isValidMove(Position position) {
+        return !Position.equals(position) && position.x >= 0 && position.x < 8 && position.y >= 0 && position.y < 8 &&
+                Math.abs(Position.x - position.x) == Math.abs(Position.y - position.y);
     }
 }
