@@ -2,6 +2,7 @@ package models.pieces;
 
 import enums.PieceColor;
 import enums.PieceType;
+import models.utils.Position;
 
 public class Pawn extends Piece {
     public Pawn(PieceColor color, int x, int y) {
@@ -9,7 +10,11 @@ public class Pawn extends Piece {
     }
 
     @Override
-    public boolean isValidMove(models.utils.Position position) {
-        return false;
+    public boolean isValidMove(Position position) {
+        if(Position.x != position.x) return false;
+        if(Color.equals(PieceColor.BLACK)) {
+            return (Position.y == 1 && position.y == Position.y + 2) || position.y == Position.y + 1;
+        }
+        return (Position.y == 6 && position.y == Position.y - 2) || position.y == Position.y - 1;
     }
 }
