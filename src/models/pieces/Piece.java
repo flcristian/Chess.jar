@@ -15,7 +15,7 @@ public abstract class Piece {
         Position = new Position(x, y);
     }
 
-    abstract boolean isValidMove(Position position);
+    public abstract boolean isValidMove(Position position);
 
     @Override
     public boolean equals(Object obj) {

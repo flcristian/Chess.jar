@@ -1,6 +1,7 @@
 package controllers;
 
 import enums.PieceColor;
+import enums.PieceType;
 import models.pieces.*;
 import models.utils.Position;
 
@@ -10,12 +11,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class PieceController {
     private List<Piece> pieceList;
+    private List<Piece> capturedPieceList;
     private Piece movingPiece;
+    private PieceColor turnColor;
 
-    PieceController() {
-        pieceList = new ArrayList<>();
-        movingPiece = null;
-    }
+    PieceController() { initializePieceController(); }
 
     // ACCESSORS
 
@@ -25,15 +25,6 @@ public class PieceController {
 
     // PUBLIC METHODS
 
-    public void initializePieces() {
-        initializePawns();
-        initializeRooks();
-        initializeKnights();
-        initializeBishops();
-        initializeQueens();
-        initializeKings();
-    }
-
     public boolean tryMovePiece(Position position) {
         AtomicBoolean moved = new AtomicBoolean(false);
         pieceList.stream()
@@ -41,19 +32,39 @@ public class PieceController {
                 .findFirst()
                 .ifPresentOrElse(
                         piece -> {
-                            if(movingPiece == null ) {
-                                movingPiece = piece;
-                                System.out.println("New Moving Piece: " + movingPiece.Position);
+                            if(movingPiece == null) {
+                                if(piece.Color.equals(turnColor)) {
+                                    movingPiece = piece;
+                                    System.out.println("New Moving Piece: " + movingPiece.Position);
+                                }
+                                else {
+                                    System.out.println("Wrong Piece Color.");
+                                }
                             }
-                            else {
+                            else if(movingPiece.Color.equals(piece.Color)) {
                                 movingPiece = null;
                                 System.out.println("Cancelled movement.");
+                            }
+                            else {
+                                if((!movingPiece.Type.equals(PieceType.PAWN) && movingPiece.isValidMove(position) && !isPathObstructed(movingPiece, position)) ||
+                                        ((Pawn) movingPiece).isValidTakeMove(position)) {
+                                    capturePiece(piece);
+                                    movePiece(movingPiece, position);
+                                    moved.set(true);
+                                } else {
+                                    System.out.println("Invalid move or path obstructed.");
+                                }
                             }
                         },
                         () -> {
                             if(movingPiece != null) {
-                                movePiece(movingPiece, position);
-                                moved.set(true);
+                                if(movingPiece.isValidMove(position) && !isPathObstructed(movingPiece, position)) {
+                                    movePiece(movingPiece, position);
+                                    moved.set(true);
+                                } else {
+                                    System.out.println("Invalid move or path obstructed.");
+                                    movingPiece = null;
+                                }
                             }
                         }
                 );
@@ -67,9 +78,60 @@ public class PieceController {
             if (p.equals(piece)) {
                 p.Position = position;
                 movingPiece = null;
+                turnColor = turnColor.equals(PieceColor.BLACK) ? PieceColor.WHITE : PieceColor.BLACK;
                 return;
             }
         }
+    }
+
+    private void capturePiece(Piece capturedPiece) {
+        capturedPieceList.add(capturedPiece);
+        pieceList.remove(capturedPiece);
+        System.out.println(capturedPiece.Color + " " + capturedPiece.Type + " captured.");
+    }
+
+    private boolean isPathObstructed(Piece piece, Position targetPosition) {
+        if (piece instanceof Knight) {
+            return false;
+        }
+
+        int dx = Integer.compare(targetPosition.x, piece.Position.x);
+        int dy = Integer.compare(targetPosition.y, piece.Position.y);
+
+        Position checkedPosition = new Position(piece.Position.x, piece.Position.y);
+
+        while (!checkedPosition.equals(targetPosition)) {
+            checkedPosition = new Position(checkedPosition.x + dx, checkedPosition.y + dy);
+
+            if (checkedPosition.equals(targetPosition)) {
+                break;
+            }
+
+            for (Piece otherPiece : pieceList) {
+                if (otherPiece.Position.equals(checkedPosition)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private void initializePieceController() {
+        pieceList = new ArrayList<>();
+        capturedPieceList = new ArrayList<>();
+        movingPiece = null;
+        turnColor = PieceColor.WHITE;
+        initializePieces();
+    }
+
+    private void initializePieces() {
+        initializePawns();
+        initializeRooks();
+        initializeKnights();
+        initializeBishops();
+        initializeQueens();
+        initializeKings();
     }
 
     private void initializePawns() {
