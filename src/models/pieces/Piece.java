@@ -4,7 +4,7 @@ import enums.PieceColor;
 import enums.PieceType;
 import models.utils.Position;
 
-public abstract class Piece {
+public abstract class Piece implements Cloneable {
     public PieceColor Color;
     public PieceType Type;
     public Position Position;
@@ -15,6 +15,12 @@ public abstract class Piece {
         Position = new Position(x, y);
     }
 
+    public Piece(PieceColor color, PieceType type, Position position) {
+        Color = color;
+        Type = type;
+        Position = position;
+    }
+
     public abstract boolean isValidMove(Position position);
 
     @Override
@@ -23,5 +29,16 @@ public abstract class Piece {
             return p.Position.equals(Position) && p.Color.equals(Color) && p.Type.equals(Type);
         }
         return false;
+    }
+
+    @Override
+    public Piece clone() {
+        try {
+            Piece cloned = (Piece) super.clone();
+            cloned.Position = new Position(Position.x, Position.y);
+            return cloned;
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
+        }
     }
 }

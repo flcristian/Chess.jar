@@ -1,20 +1,24 @@
 import constants.Globals;
 import controllers.PieceController;
 import controllers.PieceControllerSingleton;
+import enums.PieceColor;
 import models.utils.Position;
+import models.pieces.Piece;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionAdapter;
 
 public class GameWindow {
-    public void RenderWindow(){
-        PieceController pieceController = PieceControllerSingleton.getInstance();
+    private BoardPanel gamePanel;
+    private PieceController pieceController;
+
+    public void RenderWindow() {
+        pieceController = PieceControllerSingleton.getInstance();
 
         JFrame frame = new JFrame("Chess.jar");
-        BoardPanel gamePanel = new BoardPanel();
+        gamePanel = new BoardPanel();
 
         frame.setContentPane(gamePanel);
 
@@ -28,11 +32,11 @@ public class GameWindow {
             public void mousePressed(MouseEvent e) {
                 int x = e.getX() / 112;
                 int y = e.getY() / 112;
-                if(pieceController.tryMovePiece(new Position(x, y))) {
-                    gamePanel.repaint();
-                }
+                pieceController.tryMovePiece(new Position(x, y));
             }
         });
+
+        pieceController.addMovingPieceChangeListener(newMovingPiece -> gamePanel.repaint());
 
         frame.setVisible(true);
     }

@@ -1,6 +1,10 @@
 package renderers;
 
 import constants.Globals;
+import controllers.PieceController;
+import controllers.PieceControllerSingleton;
+import models.utils.Position;
+
 import java.awt.*;
 
 public class BoardRenderer {
@@ -19,6 +23,12 @@ public class BoardRenderer {
                 colorSwitcher = !colorSwitcher;
             }
             colorSwitcher = !colorSwitcher;
+        }
+
+        PieceController pieceController = PieceControllerSingleton.getInstance();
+        for(Position position : pieceController.PossibleMoves) {
+            g2d.setColor(new Color(0, 255, 0, (int)(0.3 * 255)));
+            g2d.fillRect(position.x * Globals.SQUARE_SIZE, position.y * Globals.SQUARE_SIZE, Globals.SQUARE_SIZE, Globals.SQUARE_SIZE);
         }
     }
 }
