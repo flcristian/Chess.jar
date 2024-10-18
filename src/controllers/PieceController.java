@@ -485,13 +485,13 @@ public class PieceController {
         IntStream.range(0, 8).forEach(i -> pieceList.add(new Pawn(color, i, pawnRow)));
         BiConsumer<Integer, Piece> addPiece = (col, piece) -> pieceList.add(piece);
 
-//        addPiece.accept(0, new Rook(color, 0, backRow));
-//        addPiece.accept(7, new Rook(color, 7, backRow));
-//        addPiece.accept(1, new Knight(color, 1, backRow));
-//        addPiece.accept(6, new Knight(color, 6, backRow));
-//        addPiece.accept(2, new Bishop(color, 2, backRow));
-//        addPiece.accept(5, new Bishop(color, 5, backRow));
-//        addPiece.accept(3, new Queen(color, 3, backRow));
+        addPiece.accept(0, new Rook(color, 0, backRow));
+        addPiece.accept(7, new Rook(color, 7, backRow));
+        addPiece.accept(1, new Knight(color, 1, backRow));
+        addPiece.accept(6, new Knight(color, 6, backRow));
+        addPiece.accept(2, new Bishop(color, 2, backRow));
+        addPiece.accept(5, new Bishop(color, 5, backRow));
+        addPiece.accept(3, new Queen(color, 3, backRow));
         addPiece.accept(4, new King(color, 4, backRow));
     }
 }
