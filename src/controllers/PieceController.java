@@ -155,6 +155,46 @@ public class PieceController {
                 .anyMatch(p -> isValidMove(p, kingPosition.get()));
     }
 
+    private boolean isKingInCheckmate(PieceColor kingColor) {
+        if (!isKingInCheck(kingColor)) {
+            return false;
+        }
+
+        Piece king = pieceList.stream()
+                .filter(p -> p.Type == PieceType.KING && p.Color == kingColor)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("King not found on the board"));
+
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                if (dx == 0 && dy == 0) continue;
+
+                Position newPosition = new Position(king.Position.x + dx, king.Position.y + dy);
+
+                if (newPosition.x < 0 || newPosition.x > 7 || newPosition.y < 0 || newPosition.y > 7) {
+                    continue;
+                }
+
+                if (isValidMove(king, newPosition) && simulateMove(king, newPosition)) {
+                    return false;
+                }
+            }
+        }
+
+        for (Piece piece : pieceList) {
+            if (piece.Color == kingColor && piece.Type != PieceType.KING) {
+                List<Position> possibleMoves = calculatePossibleMoves(piece);
+                for (Position move : possibleMoves) {
+                    if (simulateMove(piece, move)) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
     public List<Position> calculatePossibleMoves(Piece piece) {
         List<Position> possibleMoves = new ArrayList<>();
 
