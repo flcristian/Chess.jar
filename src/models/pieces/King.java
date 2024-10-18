@@ -11,8 +11,23 @@ public class King extends Piece {
 
     @Override
     public boolean isValidMove(Position position) {
-        return !Position.equals(position) && position.x >= 0 && position.x < 8 && position.y >= 0 && position.y < 8 &&
-                Math.abs(Position.x - position.x) <= 1 && Math.abs(Position.y - position.y) <= 1;
+        if (!isWithinBoard(position) || Position.equals(position)) {
+            return false;
+        }
+
+        int deltaX = Math.abs(Position.x - position.x);
+        int deltaY = Math.abs(Position.y - position.y);
+
+        if (deltaX <= 1 && deltaY <= 1) {
+            return true;
+        }
+
+        return deltaY == 0 && deltaX == 2 &&
+                ((Color == PieceColor.WHITE && Position.y == 7 && Position.x == 4) ||
+                        (Color == PieceColor.BLACK && Position.y == 0 && Position.x == 4));
     }
 
+    private boolean isWithinBoard(Position position) {
+        return position.x >= 0 && position.x < 8 && position.y >= 0 && position.y < 8;
+    }
 }

@@ -1,8 +1,11 @@
+package windows;
+
 import constants.Globals;
 import controllers.PieceController;
 import controllers.PieceControllerSingleton;
 import enums.PieceColor;
 import models.utils.Position;
+import panels.BoardPanelSingleton;
 
 import javax.swing.*;
 import java.awt.*;
@@ -10,21 +13,25 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 public class GameWindow {
-    private BoardPanel gamePanel;
+    public static JFrame Window;
+
+    public GameWindow() {
+        Window = new JFrame("Chess.jar");
+    }
+
     private PieceController pieceController;
 
     public void RenderWindow() {
+        JPanel gamePanel;
         pieceController = PieceControllerSingleton.getInstance();
+        gamePanel = BoardPanelSingleton.getInstance();
 
-        JFrame frame = new JFrame("Chess.jar");
-        gamePanel = new BoardPanel();
-
-        frame.setContentPane(gamePanel);
+        Window.setContentPane(gamePanel);
 
         gamePanel.setPreferredSize(new Dimension(Globals.WINDOW_SIZE, Globals.WINDOW_SIZE));
-        frame.pack();
+        Window.pack();
 
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        Window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         gamePanel.addMouseListener(new MouseAdapter() {
             @Override
@@ -48,6 +55,6 @@ public class GameWindow {
             gamePanel.repaint();
         });
 
-        frame.setVisible(true);
+        Window.setVisible(true);
     }
 }

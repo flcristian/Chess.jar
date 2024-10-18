@@ -4,17 +4,16 @@ import constants.Globals;
 import controllers.PieceController;
 import controllers.PieceControllerSingleton;
 import models.utils.Position;
+import panels.BoardPanelSingleton;
 
 import java.awt.*;
 
 public class BoardRenderer {
-    private final Graphics2D g2d;
-
-    public BoardRenderer(Graphics2D g2d) {
-        this.g2d = g2d;
-    }
+    public BoardRenderer() { }
 
     public void RenderBoard() {
+        Graphics2D g2d = BoardPanelSingleton.getInstance().G2D;
+
         boolean colorSwitcher = true;
         for(int i = 0; i < 8; i++) {
             for(int j = 0; j < 8; j++) {
@@ -26,7 +25,7 @@ public class BoardRenderer {
         }
 
         PieceController pieceController = PieceControllerSingleton.getInstance();
-        for(Position position : pieceController.PossibleMoves) {
+        for(Position position : pieceController.possibleMoves) {
             g2d.setColor(new Color(0, 255, 0, (int)(0.3 * 255)));
             g2d.fillRect(position.x * Globals.SQUARE_SIZE, position.y * Globals.SQUARE_SIZE, Globals.SQUARE_SIZE, Globals.SQUARE_SIZE);
         }

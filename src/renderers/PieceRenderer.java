@@ -3,6 +3,7 @@ package renderers;
 import constants.Globals;
 import enums.PieceColor;
 import enums.PieceType;
+import panels.BoardPanelSingleton;
 
 import java.awt.*;
 import java.awt.font.FontRenderContext;
@@ -11,15 +12,13 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 
 public class PieceRenderer {
-    private final Graphics2D g2d;
     private final Font chessFont;
 
-    public PieceRenderer(Graphics2D g2d) {
-        this.g2d = g2d;
+    public PieceRenderer() {
         this.chessFont = new Font("Segoe UI Symbol", Font.PLAIN, Globals.PIECE_SIZE);
     }
 
-    public void renderPiece(PieceType pieceType, PieceColor pieceColor, int boardX, int boardY) {
+    public void renderPiece(Graphics2D g2d, PieceType pieceType, PieceColor pieceColor, int boardX, int boardY) {
         int posX = 56 + (boardX * 112);
         int posY = 56 + (boardY * 112);
         char pieceChar = pieceType.getPieceChar();
