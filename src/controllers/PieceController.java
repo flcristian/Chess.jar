@@ -4,6 +4,7 @@ import enums.PieceColor;
 import enums.PieceType;
 import models.pieces.*;
 import models.utils.Position;
+import utils.ColorLogger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,16 +13,22 @@ import java.util.function.BiConsumer;
 import java.util.stream.IntStream;
 
 public class PieceController {
+    private ColorLogger logger = new ColorLogger(PieceController.class);
+
     private List<Piece> pieceList;
     private List<Piece> capturedPieceList;
     private Piece movingPiece;
     private PieceColor turnColor;
     private List<MovingPieceChangeListener> movingPieceChangeListeners;
+    private Position enPassantTarget;
+
     public List<Position> PossibleMoves;
 
     public PieceController() {
         initializePieceController();
     }
+
+    // LISTENER LOGIC
 
     public interface MovingPieceChangeListener {
         void onMovingPieceChanged(Piece newMovingPiece);
@@ -39,9 +46,13 @@ public class PieceController {
         movingPieceChangeListeners.forEach(listener -> listener.onMovingPieceChanged(movingPiece));
     }
 
+    // ACCESSORS
+
     public List<Piece> getPieceList() {
         return pieceList;
     }
+
+    // PUBLIC METHODS
 
     public void tryMovePiece(Position position) {
         Optional<Piece> targetPiece = getPieceAtPosition(position);
@@ -53,6 +64,26 @@ public class PieceController {
         }
     }
 
+    public PieceColor detectCheckmate() {
+        for (PieceColor kingColor : PieceColor.values()) {
+            if (isKingInCheckmate(kingColor)) {
+                return kingColor;
+            }
+        }
+        return null;
+    }
+
+    public PieceColor detectStalemate() {
+        for (PieceColor color : PieceColor.values()) {
+            if (isStalemate(color)) {
+                return color;
+            }
+        }
+        return null;
+    }
+
+    // PRIVATE METHODS
+
     private void handlePieceSelection(Optional<Piece> targetPiece) {
         targetPiece.ifPresent(piece -> {
             if (piece.Color.equals(turnColor)) {
@@ -61,12 +92,12 @@ public class PieceController {
                 PossibleMoves = calculatePossibleMoves(movingPiece);
                 if (PossibleMoves.isEmpty()) {
                     movingPiece = null;
-                    System.out.println("This piece can't move.");
+                    logger.warning("This piece can't move.");
                 } else {
-                    System.out.println("New Moving Piece: " + movingPiece.Position);
+                    logger.info("New Moving Piece: " + movingPiece);
                 }
             } else {
-                System.out.println("Wrong Piece Color.");
+                logger.warning("Wrong Piece Color.");
             }
         });
     }
@@ -76,22 +107,44 @@ public class PieceController {
             cancelMovement();
         } else if (isValidMove(movingPiece, position)) {
             if (simulateMove(movingPiece, position)) {
-                targetPiece.ifPresent(this::capturePiece);
+                if (isEnPassantCapture(movingPiece, position)) {
+                    capturePieceAtPosition(new Position(position.x, movingPiece.Position.y));
+                } else {
+                    targetPiece.ifPresent(this::capturePiece);
+                }
+                updateEnPassantTarget(movingPiece, position);
                 movePiece(movingPiece, position);
             } else {
-                System.out.println("This move doesn't resolve the check.");
+                logger.warning("This move doesn't resolve the check.");
             }
         } else {
-            System.out.println("Invalid move or path obstructed.");
+            logger.warning("Invalid move or path obstructed.");
             cancelMovement();
         }
+    }
+
+    private void updateEnPassantTarget(Piece piece, Position newPosition) {
+        enPassantTarget = null;
+        if (piece.Type.equals(PieceType.PAWN)) {
+            int startRow = piece.Color == PieceColor.WHITE ? 6 : 1;
+            if (piece.Position.y == startRow && Math.abs(newPosition.y - startRow) == 2) {
+                enPassantTarget = new Position(newPosition.x, (newPosition.y + piece.Position.y) / 2);
+            }
+        }
+        logger.info("En Passant Target: " + enPassantTarget);
     }
 
     private void cancelMovement() {
         movingPiece = null;
         PossibleMoves.clear();
         notifyMovingPieceChangeListeners();
-        System.out.println("Cancelled movement.");
+        logger.info("Cancelled movement.");
+    }
+
+    private void capturePiece(Piece capturedPiece) {
+        capturedPieceList.add(capturedPiece);
+        pieceList.remove(capturedPiece);
+        logger.info(capturedPiece.Color + " " + capturedPiece.Type + " captured.");
     }
 
     private void movePiece(Piece piece, Position position) {
@@ -102,10 +155,8 @@ public class PieceController {
         turnColor = turnColor.equals(PieceColor.BLACK) ? PieceColor.WHITE : PieceColor.BLACK;
     }
 
-    private void capturePiece(Piece capturedPiece) {
-        capturedPieceList.add(capturedPiece);
-        pieceList.remove(capturedPiece);
-        System.out.println(capturedPiece.Color + " " + capturedPiece.Type + " captured.");
+    private void capturePieceAtPosition(Position position) {
+        getPieceAtPosition(position).ifPresent(this::capturePiece);
     }
 
     private boolean isPathObstructed(Piece piece, Position targetPosition) {
@@ -152,7 +203,77 @@ public class PieceController {
 
         return pieceList.stream()
                 .filter(p -> p.Color != kingColor)
-                .anyMatch(p -> isValidMove(p, kingPosition.get()));
+                .anyMatch(p -> canAttack(p, kingPosition.get()));
+    }
+
+    private boolean canAttack(Piece attacker, Position targetPosition) {
+        if (attacker instanceof Pawn) {
+            return ((Pawn) attacker).isValidTakeMove(targetPosition, enPassantTarget);
+        }
+        return attacker.isValidMove(targetPosition) && !isPathObstructed(attacker, targetPosition);
+    }
+
+    private boolean isValidMove(Piece piece, Position targetPosition) {
+        Optional<Piece> targetPiece = getPieceAtPosition(targetPosition);
+
+        if (targetPiece.isPresent() && targetPiece.get().Color == piece.Color) {
+            return false;
+        }
+
+        boolean isValidPieceMove;
+        if (piece instanceof Pawn pawn) {
+            boolean isCapture = targetPiece.isPresent() || isEnPassantCapture(piece, targetPosition);
+            if (isCapture) {
+                isValidPieceMove = pawn.isValidTakeMove(targetPosition, enPassantTarget);
+            } else {
+                isValidPieceMove = pawn.isValidMove(targetPosition);
+            }
+        } else {
+            isValidPieceMove = piece.isValidMove(targetPosition);
+        }
+
+        return isValidPieceMove && !isPathObstructed(piece, targetPosition) && !moveExposesKing(piece, targetPosition);
+    }
+
+    private boolean isEnPassantCapture(Piece piece, Position targetPosition) {
+        if (!(piece instanceof Pawn) || enPassantTarget == null) {
+            return false;
+        }
+
+        int forwardDirection = (piece.Color == PieceColor.WHITE) ? -1 : 1;
+        return targetPosition.equals(enPassantTarget) &&
+                Math.abs(piece.Position.x - targetPosition.x) == 1 &&
+                targetPosition.y - piece.Position.y == forwardDirection;
+    }
+
+    private boolean moveExposesKing(Piece piece, Position newPosition) {
+        Position originalPosition = piece.Position;
+        Optional<Piece> capturedPiece = getPieceAtPosition(newPosition);
+
+        piece.Position = newPosition;
+        capturedPiece.ifPresent(pieceList::remove);
+
+        boolean kingInCheck = isKingInCheck(piece.Color);
+
+        piece.Position = originalPosition;
+        capturedPiece.ifPresent(pieceList::add);
+
+        return kingInCheck;
+    }
+
+    public List<Position> calculatePossibleMoves(Piece piece) {
+        List<Position> possibleMoves = new ArrayList<>();
+
+        for (int x = 0; x < 8; x++) {
+            for (int y = 0; y < 8; y++) {
+                Position targetPosition = new Position(x, y);
+                if (!targetPosition.equals(piece.Position) && isValidMove(piece, targetPosition)) {
+                    possibleMoves.add(targetPosition);
+                }
+            }
+        }
+
+        return possibleMoves;
     }
 
     private boolean isKingInCheckmate(PieceColor kingColor) {
@@ -195,38 +316,29 @@ public class PieceController {
         return true;
     }
 
-    public List<Position> calculatePossibleMoves(Piece piece) {
-        List<Position> possibleMoves = new ArrayList<>();
+    private boolean isStalemate(PieceColor color) {
+        if (isKingInCheck(color)) {
+            return false;
+        }
 
-        for (int x = 0; x < 8; x++) {
-            for (int y = 0; y < 8; y++) {
-                Position targetPosition = new Position(x, y);
-                if (!targetPosition.equals(piece.Position) && isValidMove(piece, targetPosition)) {
-                    possibleMoves.add(targetPosition);
+        for (Piece piece : pieceList) {
+            if (piece.Color == color) {
+                for (int x = 0; x < 8; x++) {
+                    for (int y = 0; y < 8; y++) {
+                        Position targetPosition = new Position(x, y);
+                        if (!targetPosition.equals(piece.Position) &&
+                                isValidMove(piece, targetPosition) &&
+                                simulateMove(piece, targetPosition)) {
+                            return false;
+                        }
+                    }
                 }
             }
         }
 
-        return possibleMoves;
+        return true;
     }
 
-    private boolean isValidMove(Piece piece, Position targetPosition) {
-        Optional<Piece> targetPiece = getPieceAtPosition(targetPosition);
-
-        if (targetPiece.isPresent() && targetPiece.get().Color == piece.Color) {
-            return false;
-        }
-
-        if (piece instanceof Pawn) {
-            Pawn pawn = (Pawn) piece;
-            boolean isValidPawnMove = pawn.isValidMove(targetPosition);
-            boolean isValidPawnTakeMove = pawn.isValidTakeMove(targetPosition) && targetPiece.isPresent() && targetPiece.get().Color != piece.Color;
-
-            return (isValidPawnMove || isValidPawnTakeMove) && !isPathObstructed(piece, targetPosition) && simulateMove(piece, targetPosition);
-        } else {
-            return piece.isValidMove(targetPosition) && !isPathObstructed(piece, targetPosition) && simulateMove(piece, targetPosition);
-        }
-    }
 
     private Optional<Piece> getPieceAtPosition(Position position) {
         return pieceList.stream()

@@ -3,7 +3,6 @@ import controllers.PieceController;
 import controllers.PieceControllerSingleton;
 import enums.PieceColor;
 import models.utils.Position;
-import models.pieces.Piece;
 
 import javax.swing.*;
 import java.awt.*;
@@ -36,7 +35,18 @@ public class GameWindow {
             }
         });
 
-        pieceController.addMovingPieceChangeListener(newMovingPiece -> gamePanel.repaint());
+        pieceController.addMovingPieceChangeListener(newMovingPiece -> {
+            PieceColor loserColor = pieceController.detectCheckmate();
+            if(loserColor != null) {
+                System.out.println((loserColor.equals(PieceColor.BLACK) ? "White" : "Black") + " won!");
+            }
+
+            if(pieceController.detectStalemate() != null) {
+                System.out.println("It's a stalemate!");
+            }
+
+            gamePanel.repaint();
+        });
 
         frame.setVisible(true);
     }

@@ -18,13 +18,17 @@ public class Pawn extends Piece {
         return (Position.y == 6 && position.y == Position.y - 2) || position.y == Position.y - 1;
     }
 
-    public boolean isValidTakeMove(Position position) {
-        if(Math.abs(Position.x - position.x) != 1) {
+    public boolean isValidTakeMove(Position position, Position enPassantTarget) {
+        if (Math.abs(Position.x - position.x) != 1) {
             return false;
         }
-        if(Color.equals(PieceColor.BLACK)) {
-            return position.y == Position.y + 1;
+
+        int direction = (Color.equals(PieceColor.BLACK)) ? 1 : -1;
+
+        if (position.y == Position.y + direction) {
+            return true;
         }
-        return position.y == Position.y - 1 ;
+
+        return position.equals(enPassantTarget);
     }
 }

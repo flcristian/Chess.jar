@@ -41,4 +41,9 @@ public abstract class Piece implements Cloneable {
             throw new AssertionError();
         }
     }
+
+    @Override
+    public String toString() {
+        return Type + " " + Position;
+    }
 }
