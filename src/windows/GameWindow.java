@@ -36,8 +36,8 @@ public class GameWindow {
         gamePanel.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                int x = e.getX() / 112;
-                int y = e.getY() / 112;
+                int x = e.getX() / Globals.SQUARE_SIZE;
+                int y = e.getY() / Globals.SQUARE_SIZE;
                 pieceController.tryMovePiece(new Position(x, y));
             }
         });

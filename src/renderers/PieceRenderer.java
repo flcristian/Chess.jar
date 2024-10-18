@@ -19,8 +19,8 @@ public class PieceRenderer {
     }
 
     public void renderPiece(Graphics2D g2d, PieceType pieceType, PieceColor pieceColor, int boardX, int boardY) {
-        int posX = 56 + (boardX * 112);
-        int posY = 56 + (boardY * 112);
+        int posX = Globals.SQUARE_SIZE / 2 + (boardX * Globals.SQUARE_SIZE);
+        int posY = Globals.SQUARE_SIZE / 2 + (boardY * Globals.SQUARE_SIZE);
         char pieceChar = pieceType.getPieceChar();
         String pieceString = String.valueOf(pieceChar);
 
