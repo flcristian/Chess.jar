@@ -9,24 +9,40 @@ import models.pieces.Piece;
 import models.utils.Position;
 import controllers.PieceController;
 import enums.PieceColor;
+import utils.ColorLogger;
 
 public class GameServer {
+    private final ColorLogger logger;
+
+    private static final int MAX_CLIENTS = 2;
     private static final int PORT = 8888;
+
     private PieceController gameLogic;
     private List<ClientHandler> clients = new ArrayList<>();
+    private PieceColor currentColor;
 
     public GameServer() {
+        logger = new ColorLogger(GameServer.class);
+
         gameLogic = new PieceController();
+        currentColor = PieceColor.WHITE;
     }
 
     public void start() {
         try {
             ServerSocket serverSocket = new ServerSocket(PORT);
-            System.out.println("Chess Server started on port " + PORT);
+            logger.debug("Chess Server started on port " + PORT);
 
             while (true) {
+                if (clients.size() >= MAX_CLIENTS) {
+                    Socket rejectedSocket = serverSocket.accept();
+                    rejectedSocket.close();
+                    continue;
+                }
+
                 Socket clientSocket = serverSocket.accept();
-                ClientHandler clientHandler = new ClientHandler(clientSocket);
+                ClientHandler clientHandler = new ClientHandler(clientSocket, currentColor);
+                this.currentColor = this.currentColor == PieceColor.WHITE ? PieceColor.BLACK : PieceColor.WHITE;
                 clients.add(clientHandler);
                 new Thread(clientHandler).start();
             }
@@ -36,45 +52,42 @@ public class GameServer {
     }
 
     private class ClientHandler implements Runnable {
+        private final String clientId;
+        private final PieceColor clientColor;
         private ObjectOutputStream out;
         private ObjectInputStream in;
 
-        public ClientHandler(Socket socket) {
+        public ClientHandler(Socket socket, PieceColor clientColor) {
             try {
+                this.clientId = UUID.randomUUID().toString();
+                this.clientColor = clientColor;
                 out = new ObjectOutputStream(socket.getOutputStream());
                 in = new ObjectInputStream(socket.getInputStream());
+                logger.debug("New client connected with internal ID: " + clientId);
             } catch (IOException e) {
-                e.printStackTrace();
+                throw new RuntimeException(e);
             }
         }
 
         @Override
         public void run() {
             try {
-                // Initial piece list broadcast
-                out.writeObject(new ServerUpdate(gameLogic.getPieceList(), null));
+                out.writeObject(new ServerUpdate(gameLogic.getPieceList(), null, clientColor));
 
                 while (true) {
                     // Receive move from client
-                    Position movePosition = (Position) in.readObject();
+                    Position position = (Position) in.readObject();
 
                     // Process move
-                    gameLogic.tryMovePiece(movePosition);
+                    if(gameLogic.getTurnColor() == clientColor) {
+                        logger.warning("Move received from internal client ID: " + clientId + " with client color " + clientColor);
+                        gameLogic.tryMovePiece(position);
 
-                    // Broadcast updated state to all clients
-                    broadcastServerUpdate();
-
-                    // Check for game end conditions
-                    PieceColor loserColor = gameLogic.detectCheckmate();
-                    if (loserColor != null) {
-                        broadcastGameOver((loserColor == PieceColor.BLACK) ? "White" : "Black");
-                        break;
+                        // Broadcast updated state to all clients
+                        broadcastServerUpdate();
                     }
-
-                    PieceColor stalemateColor = gameLogic.detectStalemate();
-                    if (stalemateColor != null) {
-                        broadcastGameOver("Stalemate");
-                        break;
+                    else {
+                        logger.severe("Move received from internal client ID: " + clientId + " with client color " + clientColor);
                     }
                 }
             } catch (IOException | ClassNotFoundException e) {
@@ -86,12 +99,12 @@ public class GameServer {
             var list = gameLogic.getPieceList().stream()
                     .map(Piece::clone)
                     .collect(Collectors.toList());
-            System.out.println("Output: " + list);
 
             for (ClientHandler client : clients) {
                 client.out.writeObject(new ServerUpdate(
                         list,
-                        gameLogic.getMovingPiece()
+                        gameLogic.getMovingPiece(),
+                        clientColor
                 ));
             }
         }

@@ -15,7 +15,7 @@ import java.util.function.BiConsumer;
 import java.util.stream.IntStream;
 
 public class PieceController {
-    private final ColorLogger logger = new ColorLogger(PieceController.class);
+    private final ColorLogger logger;
 
     private List<Piece> pieceList;
     private List<Piece> hasMoved;
@@ -24,9 +24,10 @@ public class PieceController {
     private List<MovingPieceChangeListener> movingPieceChangeListeners;
     private Position enPassantTarget;
 
-    public List<Position> possibleMoves;
+    public List<Position> PossibleMoves;
 
     public PieceController() {
+        logger = new ColorLogger(PieceController.class);
         initializePieceController();
     }
 
@@ -66,6 +67,8 @@ public class PieceController {
         this.movingPiece = movingPiece;
     }
 
+    public PieceColor getTurnColor() { return this.turnColor; }
+
     // METHODS
 
     public void tryMovePiece(Position position) {
@@ -104,7 +107,7 @@ public class PieceController {
                 movingPiece = piece;
                 notifyMovingPieceChangeListeners();
                 calculatePossibleMoves(movingPiece);
-                if (possibleMoves.isEmpty()) {
+                if (PossibleMoves.isEmpty()) {
                     movingPiece = null;
                     logger.warning("This piece can't move.");
                 } else {
@@ -289,7 +292,7 @@ public class PieceController {
 
     private void cancelMovement() {
         movingPiece = null;
-        possibleMoves.clear();
+        PossibleMoves.clear();
         notifyMovingPieceChangeListeners();
         logger.info("Cancelled movement.");
     }
@@ -305,7 +308,7 @@ public class PieceController {
             handlePawnPromotion(pawn, position);
         }
         movingPiece = null;
-        possibleMoves.clear();
+        PossibleMoves.clear();
         notifyMovingPieceChangeListeners();
         turnColor = turnColor.equals(PieceColor.BLACK) ? PieceColor.WHITE : PieceColor.BLACK;
     }
@@ -395,13 +398,18 @@ public class PieceController {
     }
 
     public void calculatePossibleMoves(Piece piece) {
-        possibleMoves.clear();
+        if(piece == null) {
+            PossibleMoves.clear();
+            return;
+        }
+
+        PossibleMoves.clear();
 
         for (int x = 0; x < 8; x++) {
             for (int y = 0; y < 8; y++) {
                 Position targetPosition = new Position(x, y);
                 if (!targetPosition.equals(piece.Position) && isValidMove(piece, targetPosition)) {
-                    possibleMoves.add(targetPosition);
+                    PossibleMoves.add(targetPosition);
                 }
             }
         }
@@ -436,7 +444,7 @@ public class PieceController {
         for (Piece piece : pieceList) {
             if (piece.Color == kingColor && piece.Type != PieceType.KING) {
                 calculatePossibleMoves(piece);
-                for (Position move : possibleMoves) {
+                for (Position move : PossibleMoves) {
                     if (simulateMove(piece, move)) {
                         return false;
                     }
@@ -479,7 +487,7 @@ public class PieceController {
     private void initializePieceController() {
         pieceList = new ArrayList<>();
         hasMoved = new ArrayList<>();
-        possibleMoves = new ArrayList<>();
+        PossibleMoves = new ArrayList<>();
         movingPiece = null;
         turnColor = PieceColor.WHITE;
         movingPieceChangeListeners = new ArrayList<>();

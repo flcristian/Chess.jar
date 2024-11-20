@@ -25,7 +25,7 @@ public class BoardRenderer {
         }
 
         PieceController pieceController = PieceControllerSingleton.getInstance();
-        for(Position position : pieceController.possibleMoves) {
+        for(Position position : pieceController.PossibleMoves) {
             g2d.setColor(new Color(0, 255, 0, (int)(0.3 * 255)));
             g2d.fillRect(position.x * Globals.SQUARE_SIZE, position.y * Globals.SQUARE_SIZE, Globals.SQUARE_SIZE, Globals.SQUARE_SIZE);
         }

@@ -18,20 +18,17 @@ public class ColorLogger {
     }
 
     private void setupColorFormatter() {
-        // Remove default handlers
         Logger rootLogger = Logger.getLogger("");
         for (Handler handler : rootLogger.getHandlers()) {
             rootLogger.removeHandler(handler);
         }
 
-        // Add custom handler with colorized formatter
         Handler consoleHandler = new ConsoleHandler();
         consoleHandler.setFormatter(new Formatter() {
             @Override
             public String format(LogRecord record) {
                 String color;
 
-                // Set color based on log level
                 switch (record.getLevel().getName()) {
                     case "INFO":
                         color = ANSI_GREEN;
@@ -58,8 +55,12 @@ public class ColorLogger {
                         record.getMessage());
             }
         });
+
+        logger.setLevel(Level.FINE);
+        consoleHandler.setLevel(Level.FINE);
+
         logger.addHandler(consoleHandler);
-        logger.setUseParentHandlers(false); // Avoid double logging
+        logger.setUseParentHandlers(false);
     }
 
     public void info(String message) {

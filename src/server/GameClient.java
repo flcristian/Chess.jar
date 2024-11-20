@@ -9,6 +9,7 @@ import java.net.*;
 
 import constants.Globals;
 import controllers.PieceControllerSingleton;
+import enums.PieceColor;
 import models.utils.Position;
 import controllers.PieceController;
 import panels.BoardPanel;
@@ -83,10 +84,13 @@ public class GameClient {
     }
 
     private synchronized void updateGameState(ServerUpdate update) {
-        pieceController.setPieceList(update.pieceList);
-        System.out.println("Update pieces: " + update.pieceList);
-        System.out.println("Update pieces2: " + pieceController.getPieceList());
-        pieceController.setMovingPiece(update.selectedPiece);
+        pieceController.setPieceList(update.PieceList);
+        pieceController.setMovingPiece(update.SelectedPiece);
+
+        if(update.SelectedPiece.Color == update.ClientColor) {
+            pieceController.calculatePossibleMoves(update.SelectedPiece);
+        }
+
         boardPanel.repaint();
     }
 
