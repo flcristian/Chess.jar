@@ -9,6 +9,10 @@ public class Rook extends Piece {
         super(color, PieceType.ROOK, x, y);
     }
 
+    public Rook(PieceColor color, Position position) {
+        super(color, PieceType.ROOK, position);
+    }
+
     @Override
     public boolean isValidMove(Position position) {
         return !Position.equals(position) && position.x >= 0 && position.x < 8 && position.y >= 0 && position.y < 8 &&

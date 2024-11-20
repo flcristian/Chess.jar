@@ -1,6 +1,5 @@
 package panels;
 
-import javax.swing.*;
 import java.util.function.Supplier;
 
 public class BoardPanelSingleton {

@@ -9,6 +9,8 @@ public class King extends Piece {
         super(color, PieceType.KING, x, y);
     }
 
+    public King(PieceColor color, Position position) { super(color, PieceType.KING, position); }
+
     @Override
     public boolean isValidMove(Position position) {
         if (!isWithinBoard(position) || Position.equals(position)) {

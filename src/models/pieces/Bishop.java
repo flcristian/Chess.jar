@@ -9,6 +9,10 @@ public class Bishop extends Piece {
         super(color, PieceType.BISHOP, x, y);
     }
 
+    public Bishop(PieceColor color, Position position) {
+        super(color, PieceType.BISHOP, position);
+    }
+
     @Override
     public boolean isValidMove(Position position) {
         return !Position.equals(position) && position.x >= 0 && position.x < 8 && position.y >= 0 && position.y < 8 &&

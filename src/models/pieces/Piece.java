@@ -4,7 +4,9 @@ import enums.PieceColor;
 import enums.PieceType;
 import models.utils.Position;
 
-public abstract class Piece implements Cloneable {
+import java.io.Serializable;
+
+public abstract class Piece implements Cloneable, Serializable {
     public PieceColor Color;
     public PieceType Type;
     public Position Position;
@@ -18,7 +20,7 @@ public abstract class Piece implements Cloneable {
     public Piece(PieceColor color, PieceType type, Position position) {
         Color = color;
         Type = type;
-        Position = position;
+        Position = new Position(position.x, position.y);
     }
 
     public abstract boolean isValidMove(Position position);
@@ -33,13 +35,14 @@ public abstract class Piece implements Cloneable {
 
     @Override
     public Piece clone() {
-        try {
-            Piece cloned = (Piece) super.clone();
-            cloned.Position = new Position(Position.x, Position.y);
-            return cloned;
-        } catch (CloneNotSupportedException e) {
-            throw new AssertionError();
-        }
+        return switch (Type) {
+            case KING -> new King(Color, Position);
+            case QUEEN -> new Queen(Color, Position);
+            case BISHOP -> new Bishop(Color, Position);
+            case KNIGHT -> new Knight(Color, Position);
+            case ROOK -> new Rook(Color, Position);
+            case PAWN -> new Pawn(Color, Position);
+        };
     }
 
     @Override

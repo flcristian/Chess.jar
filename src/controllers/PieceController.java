@@ -5,11 +5,9 @@ import enums.PieceType;
 import menus.PromotionDialog;
 import models.pieces.*;
 import models.utils.Position;
-import panels.BoardPanelSingleton;
 import utils.ColorLogger;
 import windows.GameWindow;
 
-import javax.swing.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -56,7 +54,19 @@ public class PieceController {
         return pieceList;
     }
 
-    // PUBLIC METHODS
+    public void setPieceList(List<Piece> pieceList) {
+        this.pieceList = pieceList;
+    }
+
+    public Piece getMovingPiece() {
+        return movingPiece;
+    }
+
+    public void setMovingPiece(Piece movingPiece) {
+        this.movingPiece = movingPiece;
+    }
+
+    // METHODS
 
     public void tryMovePiece(Position position) {
         Optional<Piece> targetPiece = getPieceAtPosition(position);

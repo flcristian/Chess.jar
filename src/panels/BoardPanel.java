@@ -10,6 +10,8 @@ import renderers.PieceRendererSingleton;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.Random;
+import java.util.random.RandomGenerator;
 
 public class BoardPanel extends JPanel {
     public Graphics2D G2D;
@@ -26,6 +28,7 @@ public class BoardPanel extends JPanel {
         PieceRenderer pieceRenderer = PieceRendererSingleton.getInstance();
 
         PieceController pieceController = PieceControllerSingleton.getInstance();
+        System.out.println("Board panel pieces: " + pieceController.getPieceList());
         for(Piece piece : pieceController.getPieceList()) {
             pieceRenderer.renderPiece(G2D, piece.Type, piece.Color, piece.Position.x, piece.Position.y);
         }

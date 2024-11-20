@@ -9,6 +9,10 @@ public class Pawn extends Piece {
         super(color, PieceType.PAWN, x, y);
     }
 
+    public Pawn(PieceColor color, Position position) {
+        super(color, PieceType.PAWN, position);
+    }
+
     @Override
     public boolean isValidMove(Position position) {
         if(Position.x != position.x) return false;

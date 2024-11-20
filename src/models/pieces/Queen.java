@@ -9,6 +9,10 @@ public class Queen extends Piece {
         super(color, PieceType.QUEEN, x, y);
     }
 
+    public Queen(PieceColor color, Position position) {
+        super(color, PieceType.QUEEN, position);
+    }
+
     @Override
     public boolean isValidMove(Position position) {
         return !Position.equals(position) && position.x >= 0 && position.x < 8 && position.y >= 0 && position.y < 8 &&

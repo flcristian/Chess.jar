@@ -9,6 +9,10 @@ public class Knight extends Piece {
         super(color, PieceType.KNIGHT, x, y);
     }
 
+    public Knight(PieceColor color, Position position) {
+        super(color, PieceType.KNIGHT, position);
+    }
+
     @Override
     public boolean isValidMove(Position position) {
         return position.x >= 0 && position.x < 8 && position.y >= 0 && position.y < 8 &&
