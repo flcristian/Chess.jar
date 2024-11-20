@@ -35,6 +35,10 @@ public class GameClient {
             startListening();
         } catch (IOException e) {
             logger.severe(e.getMessage());
+            JOptionPane.showMessageDialog(null,
+                    "Connection failed: " + e.getMessage(),
+                    "Connection Error",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -74,6 +78,10 @@ public class GameClient {
                 }
             } catch (IOException | ClassNotFoundException e) {
                 logger.severe(e.getMessage());
+                JOptionPane.showMessageDialog(null,
+                        "Connection lost: " + e.getMessage(),
+                        "Connection Error",
+                        JOptionPane.ERROR_MESSAGE);
             }
         }).start();
     }
@@ -98,10 +106,22 @@ public class GameClient {
 
     private void handleGameOver(String gameOverMessage) {
         String result = gameOverMessage.split(":")[1];
+        result = result.equals("Stalemate") ? result : result + " won!";
         JOptionPane.showMessageDialog(null, result);
     }
 
     public static void main(String[] args) {
-        new GameClient("localhost", 8888);
+        String serverAddress = JOptionPane.showInputDialog(
+                null,
+                "Enter Server IP Address:",
+                "Connect to Server",
+                JOptionPane.QUESTION_MESSAGE
+        );
+
+        if (serverAddress == null || serverAddress.trim().isEmpty()) {
+            serverAddress = "localhost";
+        }
+
+        new GameClient(serverAddress, 8888);
     }
 }

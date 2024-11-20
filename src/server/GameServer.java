@@ -29,8 +29,11 @@ public class GameServer {
 
     public void start() {
         try {
+            // Get the local IP address
+            String localIpAddress = getLocalIPv4Address();
             ServerSocket serverSocket = new ServerSocket(PORT);
-            logger.debug("Chess Server started on port " + PORT);
+
+            logger.debug(String.format("Chess Server started on %s:%d", localIpAddress, PORT));
 
             while (true) {
                 if (clients.size() >= MAX_CLIENTS) {
@@ -48,6 +51,28 @@ public class GameServer {
         } catch (IOException e) {
             logger.severe(e.getMessage());
         }
+    }
+
+    private String getLocalIPv4Address() {
+        try {
+            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            while (interfaces.hasMoreElements()) {
+                NetworkInterface networkInterface = interfaces.nextElement();
+                if (networkInterface.isLoopback() || !networkInterface.isUp()) {
+                    continue;
+                }
+
+                for (InterfaceAddress interfaceAddress : networkInterface.getInterfaceAddresses()) {
+                    InetAddress addr = interfaceAddress.getAddress();
+                    if (addr instanceof Inet4Address && !addr.isLoopbackAddress()) {
+                        return addr.getHostAddress();
+                    }
+                }
+            }
+        } catch (SocketException e) {
+            logger.severe("Could not retrieve local IP address: " + e.getMessage());
+        }
+        return "Unknown";
     }
 
     private class ClientHandler implements Runnable {
