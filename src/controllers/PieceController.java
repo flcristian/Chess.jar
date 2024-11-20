@@ -92,7 +92,14 @@ public class PieceController {
 
     public PieceColor detectCheckmate() {
         for (PieceColor kingColor : PieceColor.values()) {
-            if (isKingInCheckmate(kingColor)) {
+            Piece king = pieceList.stream()
+                    .filter(p -> p.Type == PieceType.KING && p.Color == kingColor)
+                    .findFirst()
+                    .orElse(null);
+
+            if (king == null) continue;
+
+            if (isKingInCheckmate(king)) {
                 return kingColor;
             }
         }
@@ -425,44 +432,34 @@ public class PieceController {
         return kingInCheck;
     }
 
-    private boolean isKingInCheckmate(PieceColor kingColor) {
-        if (!isKingInCheck(kingColor)) {
+    private boolean isKingInCheckmate(Piece king) {
+        if (!isKingInCheck(king.Color)) {
             return false;
         }
 
-        Piece king = pieceList.stream()
-                .filter(p -> p.Type == PieceType.KING && p.Color == kingColor)
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("King not found on the board"));
+        List<Piece> colorPieces = pieceList.stream()
+                .filter(p -> p.Color == king.Color)
+                .toList();
 
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = -1; dy <= 1; dy++) {
-                if (dx == 0 && dy == 0) continue;
-
-                Position newPosition = new Position(king.Position.x() + dx, king.Position.y() + dy);
-
-                if (newPosition.x() < 0 || newPosition.x() > 7 || newPosition.y() < 0 || newPosition.y() > 7) {
-                    continue;
-                }
-
-                if (isValidMove(king, newPosition) && simulateMove(king, newPosition)) {
-                    return false;
-                }
-            }
-        }
-
-        for (Piece piece : pieceList) {
-            if (piece.Color == kingColor && piece.Type != PieceType.KING) {
-                calculatePossibleMoves(piece);
-                for (Position move : PossibleMoves) {
-                    if (simulateMove(piece, move)) {
-                        return false;
-                    }
-                }
-            }
+        for (Piece piece : colorPieces) {
+            if (hasValidEscapeMove(piece)) return false;
         }
 
         return true;
+    }
+
+    private boolean hasValidEscapeMove(Piece piece) {
+        for (int x = 0; x < 8; x++) {
+            for (int y = 0; y < 8; y++) {
+                Position targetPosition = new Position(x, y);
+                if (!targetPosition.equals(piece.Position) &&
+                        isValidMove(piece, targetPosition) &&
+                        simulateMove(piece, targetPosition)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private boolean isStalemate(PieceColor color) {
@@ -472,16 +469,7 @@ public class PieceController {
 
         for (Piece piece : pieceList) {
             if (piece.Color == color) {
-                for (int x = 0; x < 8; x++) {
-                    for (int y = 0; y < 8; y++) {
-                        Position targetPosition = new Position(x, y);
-                        if (!targetPosition.equals(piece.Position) &&
-                                isValidMove(piece, targetPosition) &&
-                                simulateMove(piece, targetPosition)) {
-                            return false;
-                        }
-                    }
-                }
+                if (hasValidEscapeMove(piece)) return false;
             }
         }
 

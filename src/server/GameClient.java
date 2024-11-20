@@ -48,8 +48,8 @@ public class GameClient {
         pieceController = PieceControllerSingleton.getInstance();
 
         window.setContentPane(boardPanel);
-        window.setPreferredSize(new Dimension(Globals.WINDOW_SIZE, Globals.WINDOW_SIZE));
-        window.pack();
+        window.setSize(Globals.WINDOW_SIZE, Globals.WINDOW_SIZE + 30);
+        window.setResizable(false);
         window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         boardPanel.addMouseListener(new MouseAdapter() {

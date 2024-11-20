@@ -29,8 +29,9 @@ public class GameWindow {
 
         WINDOW.setContentPane(gamePanel);
 
-        gamePanel.setPreferredSize(new Dimension(Globals.WINDOW_SIZE, Globals.WINDOW_SIZE));
-        WINDOW.pack();
+        WINDOW.setSize(Globals.WINDOW_SIZE, Globals.WINDOW_SIZE + 30);
+
+        WINDOW.setResizable(false);
 
         WINDOW.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -44,6 +45,7 @@ public class GameWindow {
         });
 
         pieceController.addMovingPieceChangeListener(newMovingPiece -> {
+            pieceController.setClientColor(pieceController.getTurnColor());
             PieceColor loserColor = pieceController.detectCheckmate();
             if(loserColor != null) {
                 logger.info((loserColor.equals(PieceColor.BLACK) ? "White" : "Black") + " won!");
