@@ -6,6 +6,7 @@ import controllers.PieceControllerSingleton;
 import enums.PieceColor;
 import models.utils.Position;
 import panels.BoardPanelSingleton;
+import utils.ColorLogger;
 
 import javax.swing.*;
 import java.awt.*;
@@ -13,25 +14,25 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 public class GameWindow {
-    public static JFrame Window;
+    private final ColorLogger logger;
+
+    public static final JFrame WINDOW = new JFrame("Chess.jar");
 
     public GameWindow() {
-        Window = new JFrame("Chess.jar");
+        logger = new ColorLogger(GameWindow.class);
     }
-
-    private PieceController pieceController;
 
     public void RenderWindow() {
         JPanel gamePanel;
-        pieceController = PieceControllerSingleton.getInstance();
+        PieceController pieceController = PieceControllerSingleton.getInstance();
         gamePanel = BoardPanelSingleton.getInstance();
 
-        Window.setContentPane(gamePanel);
+        WINDOW.setContentPane(gamePanel);
 
         gamePanel.setPreferredSize(new Dimension(Globals.WINDOW_SIZE, Globals.WINDOW_SIZE));
-        Window.pack();
+        WINDOW.pack();
 
-        Window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        WINDOW.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         gamePanel.addMouseListener(new MouseAdapter() {
             @Override
@@ -45,16 +46,16 @@ public class GameWindow {
         pieceController.addMovingPieceChangeListener(newMovingPiece -> {
             PieceColor loserColor = pieceController.detectCheckmate();
             if(loserColor != null) {
-                System.out.println((loserColor.equals(PieceColor.BLACK) ? "White" : "Black") + " won!");
+                logger.info((loserColor.equals(PieceColor.BLACK) ? "White" : "Black") + " won!");
             }
 
             if(pieceController.detectStalemate() != null) {
-                System.out.println("It's a stalemate!");
+                logger.info("It's a stalemate!");
             }
 
             gamePanel.repaint();
         });
 
-        Window.setVisible(true);
+        WINDOW.setVisible(true);
     }
 }

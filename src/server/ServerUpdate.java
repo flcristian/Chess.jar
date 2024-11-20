@@ -2,18 +2,16 @@ package server;
 
 import enums.PieceColor;
 import models.pieces.Piece;
+import models.utils.Position;
 
 import java.io.Serializable;
 import java.util.List;
 
-public class ServerUpdate implements Serializable {
-    public List<Piece> PieceList;
-    public Piece SelectedPiece;
-    public PieceColor ClientColor;
-
-    public ServerUpdate(List<Piece> pieceList, Piece selectedPiece, PieceColor clientColor) {
-        PieceList = pieceList;
-        SelectedPiece = selectedPiece;
-        ClientColor = clientColor;
-    }
+public record ServerUpdate(
+        List<Piece> PieceList,
+        Piece SelectedPiece,
+        List<Position> PossibleMoves,
+        PieceColor ClientColor,
+        PieceColor TurnColor
+) implements Serializable {
 }

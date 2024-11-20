@@ -3,8 +3,6 @@ package constants;
 import java.awt.*;
 
 public class Globals {
-    Globals() {}
-
     public static final int WINDOW_SIZE = 896;
     public static final int SQUARE_SIZE = 112;
     public static final int PIECE_SIZE = 64;

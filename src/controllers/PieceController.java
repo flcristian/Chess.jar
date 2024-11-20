@@ -20,6 +20,7 @@ public class PieceController {
     private List<Piece> pieceList;
     private List<Piece> hasMoved;
     private Piece movingPiece;
+    private PieceColor clientColor;
     private PieceColor turnColor;
     private List<MovingPieceChangeListener> movingPieceChangeListeners;
     private Position enPassantTarget;
@@ -68,6 +69,14 @@ public class PieceController {
     }
 
     public PieceColor getTurnColor() { return this.turnColor; }
+
+    public void setTurnColor(PieceColor turnColor) { this.turnColor = turnColor; }
+
+    public void setPossibleMoves(List<Position> possibleMoves) { PossibleMoves = possibleMoves; }
+
+    public PieceColor getClientColor() { return this.clientColor; }
+
+    public void setClientColor(PieceColor clientColor) { this.clientColor = clientColor; }
 
     // METHODS
 
@@ -125,7 +134,7 @@ public class PieceController {
         } else if (isValidMove(movingPiece, position)) {
             if (simulateMove(movingPiece, position)) {
                 if (isEnPassantCapture(movingPiece, position)) {
-                    capturePieceAtPosition(new Position(position.x, movingPiece.Position.y));
+                    capturePieceAtPosition(new Position(position.x(), movingPiece.Position.y()));
                 } else {
                     targetPiece.ifPresent(this::capturePiece);
                 }
@@ -150,13 +159,13 @@ public class PieceController {
     }
 
     private void handlePawnPromotion(Pawn pawn, Position newPosition) {
-        boolean isAtEndRow = (pawn.Color == PieceColor.WHITE && newPosition.y == 0) ||
-                (pawn.Color == PieceColor.BLACK && newPosition.y == 7);
+        boolean isAtEndRow = (pawn.Color == PieceColor.WHITE && newPosition.y() == 0) ||
+                (pawn.Color == PieceColor.BLACK && newPosition.y() == 7);
 
         if (isAtEndRow) {
             logger.info(pawn + " can promote.");
 
-            PromotionDialog dialog = new PromotionDialog(GameWindow.Window, pawn.Color);
+            PromotionDialog dialog = new PromotionDialog(GameWindow.WINDOW, pawn.Color);
             dialog.setVisible(true);
 
             PieceType selectedType = dialog.getSelectedPieceType();
@@ -177,6 +186,7 @@ public class PieceController {
             return;
         }
 
+        logger.debug(piece.toString());
         PossibleMoves.clear();
 
         for (int x = 0; x < 8; x++) {
@@ -194,10 +204,10 @@ public class PieceController {
     private static Piece getPromotionPiece(Pawn pawn, Position newPosition, PieceType selectedType) {
         Piece newPiece;
         switch (selectedType) {
-            case QUEEN -> newPiece = new Queen(pawn.Color, newPosition.x, newPosition.y);
-            case ROOK -> newPiece = new Rook(pawn.Color, newPosition.x, newPosition.y);
-            case BISHOP -> newPiece = new Bishop(pawn.Color, newPosition.x, newPosition.y);
-            case KNIGHT -> newPiece = new Knight(pawn.Color, newPosition.x, newPosition.y);
+            case QUEEN -> newPiece = new Queen(pawn.Color, newPosition.x(), newPosition.y());
+            case ROOK -> newPiece = new Rook(pawn.Color, newPosition.x(), newPosition.y());
+            case BISHOP -> newPiece = new Bishop(pawn.Color, newPosition.x(), newPosition.y());
+            case KNIGHT -> newPiece = new Knight(pawn.Color, newPosition.x(), newPosition.y());
             default -> throw new IllegalStateException("Unexpected piece type: " + selectedType);
         }
         return newPiece;
@@ -208,8 +218,8 @@ public class PieceController {
             return false;
         }
 
-        int deltaX = newPosition.x - piece.Position.x;
-        return Math.abs(deltaX) == 2 && newPosition.y == piece.Position.y;
+        int deltaX = newPosition.x() - piece.Position.x();
+        return Math.abs(deltaX) == 2 && newPosition.y() == piece.Position.y();
     }
 
     private boolean isValidMove(Piece piece, Position targetPosition) {
@@ -247,8 +257,8 @@ public class PieceController {
             return false;
         }
 
-        boolean isWhiteKing = king.Color == PieceColor.WHITE && king.Position.y == 7 && king.Position.x == 4;
-        boolean isBlackKing = king.Color == PieceColor.BLACK && king.Position.y == 0 && king.Position.x == 4;
+        boolean isWhiteKing = king.Color == PieceColor.WHITE && king.Position.y() == 7 && king.Position.x() == 4;
+        boolean isBlackKing = king.Color == PieceColor.BLACK && king.Position.y() == 0 && king.Position.x() == 4;
         if (!isWhiteKing && !isBlackKing) {
             return false;
         }
@@ -257,26 +267,26 @@ public class PieceController {
             return false;
         }
 
-        int dx = targetPosition.x - king.Position.x;
-        if (Math.abs(dx) != 2 || targetPosition.y != king.Position.y) {
+        int dx = targetPosition.x() - king.Position.x();
+        if (Math.abs(dx) != 2 || targetPosition.y() != king.Position.y()) {
             return false;
         }
 
         int rookX = dx > 0 ? 7 : 0;
-        Optional<Piece> rook = getPieceAtPosition(new Position(rookX, king.Position.y));
+        Optional<Piece> rook = getPieceAtPosition(new Position(rookX, king.Position.y()));
 
         if (rook.isEmpty() || !(rook.get() instanceof Rook) || hasMoved.contains(rook.get())) {
             return false;
         }
 
         int direction = dx > 0 ? 1 : -1;
-        for (int x = king.Position.x + direction; x != rookX; x += direction) {
-            if (getPieceAtPosition(new Position(x, king.Position.y)).isPresent()) {
+        for (int x = king.Position.x() + direction; x != rookX; x += direction) {
+            if (getPieceAtPosition(new Position(x, king.Position.y())).isPresent()) {
                 return false;
             }
         }
 
-        Position intermediatePosition = new Position(king.Position.x + direction, king.Position.y);
+        Position intermediatePosition = new Position(king.Position.x() + direction, king.Position.y());
         Position originalPosition = king.Position;
 
         king.Position = intermediatePosition;
@@ -287,12 +297,12 @@ public class PieceController {
     }
 
     private void performCastling(Piece king, Position newPosition) {
-        int rookX = newPosition.x > king.Position.x ? 7 : 0;
-        int newRookX = newPosition.x > king.Position.x ? newPosition.x - 1 : newPosition.x + 1;
+        int rookX = newPosition.x() > king.Position.x() ? 7 : 0;
+        int newRookX = newPosition.x() > king.Position.x() ? newPosition.x() - 1 : newPosition.x() + 1;
 
-        Optional<Piece> rook = getPieceAtPosition(new Position(rookX, king.Position.y));
+        Optional<Piece> rook = getPieceAtPosition(new Position(rookX, king.Position.y()));
         if (rook.isPresent() && rook.get() instanceof Rook) {
-            rook.get().Position = new Position(newRookX, king.Position.y);
+            rook.get().Position = new Position(newRookX, king.Position.y());
             hasMoved.add(rook.get());
         }
     }
@@ -301,8 +311,8 @@ public class PieceController {
         enPassantTarget = null;
         if (piece.Type.equals(PieceType.PAWN)) {
             int startRow = piece.Color == PieceColor.WHITE ? 6 : 1;
-            if (piece.Position.y == startRow && Math.abs(newPosition.y - startRow) == 2) {
-                enPassantTarget = new Position(newPosition.x, (newPosition.y + piece.Position.y) / 2);
+            if (piece.Position.y() == startRow && Math.abs(newPosition.y() - startRow) == 2) {
+                enPassantTarget = new Position(newPosition.x(), (newPosition.y() + piece.Position.y()) / 2);
             }
         }
         logger.info("En Passant Target: " + enPassantTarget);
@@ -338,13 +348,13 @@ public class PieceController {
     private boolean isPathClear(Piece piece, Position targetPosition) {
         if (piece instanceof Knight) return true;
 
-        int dx = Integer.compare(targetPosition.x, piece.Position.x);
-        int dy = Integer.compare(targetPosition.y, piece.Position.y);
-        Position checkedPosition = new Position(piece.Position.x + dx, piece.Position.y + dy);
+        int dx = Integer.compare(targetPosition.x(), piece.Position.x());
+        int dy = Integer.compare(targetPosition.y(), piece.Position.y());
+        Position checkedPosition = new Position(piece.Position.x() + dx, piece.Position.y() + dy);
 
         while (!checkedPosition.equals(targetPosition)) {
             if (getPieceAtPosition(checkedPosition).isPresent()) return false;
-            checkedPosition = new Position(checkedPosition.x + dx, checkedPosition.y + dy);
+            checkedPosition = new Position(checkedPosition.x() + dx, checkedPosition.y() + dy);
         }
 
         return true;
@@ -396,8 +406,8 @@ public class PieceController {
 
         int forwardDirection = (piece.Color == PieceColor.WHITE) ? -1 : 1;
         return targetPosition.equals(enPassantTarget) &&
-                Math.abs(piece.Position.x - targetPosition.x) == 1 &&
-                targetPosition.y - piece.Position.y == forwardDirection;
+                Math.abs(piece.Position.x() - targetPosition.x()) == 1 &&
+                targetPosition.y() - piece.Position.y() == forwardDirection;
     }
 
     private boolean moveExposesKing(Piece piece, Position newPosition) {
@@ -429,9 +439,9 @@ public class PieceController {
             for (int dy = -1; dy <= 1; dy++) {
                 if (dx == 0 && dy == 0) continue;
 
-                Position newPosition = new Position(king.Position.x + dx, king.Position.y + dy);
+                Position newPosition = new Position(king.Position.x() + dx, king.Position.y() + dy);
 
-                if (newPosition.x < 0 || newPosition.x > 7 || newPosition.y < 0 || newPosition.y > 7) {
+                if (newPosition.x() < 0 || newPosition.x() > 7 || newPosition.y() < 0 || newPosition.y() > 7) {
                     continue;
                 }
 
@@ -489,6 +499,7 @@ public class PieceController {
         hasMoved = new ArrayList<>();
         PossibleMoves = new ArrayList<>();
         movingPiece = null;
+        clientColor = PieceColor.BLACK;
         turnColor = PieceColor.WHITE;
         movingPieceChangeListeners = new ArrayList<>();
         initializePieces();

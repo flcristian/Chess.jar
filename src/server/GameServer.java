@@ -3,7 +3,6 @@ package server;
 import java.io.*;
 import java.net.*;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import models.pieces.Piece;
 import models.utils.Position;
@@ -17,8 +16,8 @@ public class GameServer {
     private static final int MAX_CLIENTS = 2;
     private static final int PORT = 8888;
 
-    private PieceController gameLogic;
-    private List<ClientHandler> clients = new ArrayList<>();
+    private final PieceController gameLogic;
+    private final List<ClientHandler> clients = new ArrayList<>();
     private PieceColor currentColor;
 
     public GameServer() {
@@ -47,15 +46,15 @@ public class GameServer {
                 new Thread(clientHandler).start();
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
         }
     }
 
     private class ClientHandler implements Runnable {
         private final String clientId;
         private final PieceColor clientColor;
-        private ObjectOutputStream out;
-        private ObjectInputStream in;
+        private final ObjectOutputStream out;
+        private final ObjectInputStream in;
 
         public ClientHandler(Socket socket, PieceColor clientColor) {
             try {
@@ -72,7 +71,7 @@ public class GameServer {
         @Override
         public void run() {
             try {
-                out.writeObject(new ServerUpdate(gameLogic.getPieceList(), null, clientColor));
+                out.writeObject(new ServerUpdate(gameLogic.getPieceList(), null, gameLogic.PossibleMoves, clientColor, gameLogic.getTurnColor()));
 
                 while (true) {
                     // Receive move from client
@@ -104,20 +103,26 @@ public class GameServer {
                     }
                 }
             } catch (IOException | ClassNotFoundException e) {
-                e.printStackTrace();
+                logger.severe(e.getMessage());
             }
         }
 
         private void broadcastServerUpdate() throws IOException {
-            var list = gameLogic.getPieceList().stream()
+            var pieceList = gameLogic.getPieceList().stream()
                     .map(Piece::clone)
-                    .collect(Collectors.toList());
+                    .toList();
+
+            var possibleMovesList = gameLogic.PossibleMoves.stream()
+                    .map(Position::clone)
+                    .toList();
 
             for (ClientHandler client : clients) {
                 client.out.writeObject(new ServerUpdate(
-                        list,
+                        pieceList,
                         gameLogic.getMovingPiece(),
-                        client.clientColor
+                        possibleMovesList,
+                        client.clientColor,
+                        gameLogic.getTurnColor()
                 ));
             }
         }

@@ -5,6 +5,7 @@ import enums.PieceColor;
 import enums.PieceType;
 import renderers.PieceRenderer;
 import renderers.PieceRendererSingleton;
+import utils.ColorLogger;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -16,6 +17,8 @@ import java.io.File;
 import java.io.IOException;
 
 public class PromotionDialog extends JDialog {
+    private static final ColorLogger logger = new ColorLogger(PromotionDialog.class);
+
     private PieceType selectedPieceType = null;
 
     public PromotionDialog(JFrame parent, PieceColor color) {
@@ -51,7 +54,7 @@ public class PromotionDialog extends JDialog {
                 super.paintComponent(g);
                 Graphics2D g2d = (Graphics2D) g;
 
-                System.out.println("Current working directory: " + new File(".").getAbsolutePath());
+                logger.info("Current working directory: " + new File(".").getAbsolutePath());
                 try {
                     BufferedImage texture = ImageIO.read(new File("src/assets/textures/wood.png"));
 
@@ -60,7 +63,7 @@ public class PromotionDialog extends JDialog {
                     }
 
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    logger.severe(e.getMessage());
                     boolean colorSwitch = true;
                     for(int i = 0; i < 4; i++) {
                         g2d.setColor(colorSwitch ? Globals.BOARD_COLOR_WHITE : Globals.BOARD_COLOR_BLACK);

@@ -3,7 +3,6 @@ package enums;
 import constants.Globals;
 
 import java.awt.*;
-import java.io.Serializable;
 
 public enum PieceColor {
     WHITE, BLACK;

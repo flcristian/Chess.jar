@@ -7,8 +7,8 @@ import models.utils.Position;
 import java.io.Serializable;
 
 public abstract class Piece implements Cloneable, Serializable {
-    public PieceColor Color;
-    public PieceType Type;
+    public final PieceColor Color;
+    public final PieceType Type;
     public Position Position;
 
     public Piece(PieceColor color, PieceType type, int x, int y) {
@@ -20,7 +20,7 @@ public abstract class Piece implements Cloneable, Serializable {
     public Piece(PieceColor color, PieceType type, Position position) {
         Color = color;
         Type = type;
-        Position = new Position(position.x, position.y);
+        Position = new Position(position.x(), position.y());
     }
 
     public abstract boolean isValidMove(Position position);
@@ -33,17 +33,7 @@ public abstract class Piece implements Cloneable, Serializable {
         return false;
     }
 
-    @Override
-    public Piece clone() {
-        return switch (Type) {
-            case KING -> new King(Color, Position);
-            case QUEEN -> new Queen(Color, Position);
-            case BISHOP -> new Bishop(Color, Position);
-            case KNIGHT -> new Knight(Color, Position);
-            case ROOK -> new Rook(Color, Position);
-            case PAWN -> new Pawn(Color, Position);
-        };
-    }
+    public abstract Piece clone();
 
     @Override
     public String toString() {

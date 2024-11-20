@@ -26,33 +26,22 @@ public class ColorLogger {
         Handler consoleHandler = new ConsoleHandler();
         consoleHandler.setFormatter(new Formatter() {
             @Override
-            public String format(LogRecord record) {
-                String color;
-
-                switch (record.getLevel().getName()) {
-                    case "INFO":
-                        color = ANSI_GREEN;
-                        break;
-                    case "WARNING":
-                        color = ANSI_YELLOW;
-                        break;
-                    case "SEVERE":
-                        color = ANSI_RED;
-                        break;
-                    case "FINE":
-                        color = ANSI_BLUE;
-                        break;
-                    default:
-                        color = ANSI_RESET;
-                }
+            public String format(LogRecord logRecord) {
+                String color = switch (logRecord.getLevel().getName()) {
+                    case "INFO" -> ANSI_GREEN;
+                    case "WARNING" -> ANSI_YELLOW;
+                    case "SEVERE" -> ANSI_RED;
+                    case "FINE" -> ANSI_BLUE;
+                    default -> ANSI_RESET;
+                };
 
                 // Format the log with timestamp, level, and message
                 return String.format(ANSI_WHITE + "%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS %2$-7s " + ANSI_RESET +
                                 "%3$s%4$s" + ANSI_RESET + "%n",
-                        record.getMillis(),
-                        record.getLevel().getName(),
+                        logRecord.getMillis(),
+                        logRecord.getLevel().getName(),
                         color,
-                        record.getMessage());
+                        logRecord.getMessage());
             }
         });
 

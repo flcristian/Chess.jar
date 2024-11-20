@@ -3,7 +3,6 @@ package renderers;
 import constants.Globals;
 import enums.PieceColor;
 import enums.PieceType;
-import panels.BoardPanelSingleton;
 
 import java.awt.*;
 import java.awt.font.FontRenderContext;

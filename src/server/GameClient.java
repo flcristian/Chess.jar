@@ -9,29 +9,32 @@ import java.net.*;
 
 import constants.Globals;
 import controllers.PieceControllerSingleton;
-import enums.PieceColor;
 import models.utils.Position;
 import controllers.PieceController;
 import panels.BoardPanel;
 import panels.BoardPanelSingleton;
+import utils.ColorLogger;
 
 public class GameClient {
-    private Socket socket;
+    private final ColorLogger logger;
+
     private ObjectOutputStream out;
     private ObjectInputStream in;
     private BoardPanel boardPanel;
     private PieceController pieceController;
 
     public GameClient(String serverAddress, int port) {
+        logger = new ColorLogger(GameClient.class);
+
         try {
-            socket = new Socket(serverAddress, port);
+            Socket socket = new Socket(serverAddress, port);
             out = new ObjectOutputStream(socket.getOutputStream());
             in = new ObjectInputStream(socket.getInputStream());
 
             initializeGameWindow();
             startListening();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
         }
     }
 
@@ -65,12 +68,12 @@ public class GameClient {
 
                     if (received instanceof ServerUpdate serverUpdate) {
                         updateGameState(serverUpdate);
-                    } else if (received instanceof String && ((String) received).startsWith("GAME_OVER")) {
-                        handleGameOver((String) received);
+                    } else if (received instanceof String receivedString && receivedString.startsWith("GAME_OVER")) {
+                        handleGameOver(receivedString);
                     }
                 }
             } catch (IOException | ClassNotFoundException e) {
-                e.printStackTrace();
+                logger.severe(e.getMessage());
             }
         }).start();
     }
@@ -79,22 +82,16 @@ public class GameClient {
         try {
             out.writeObject(position);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.severe(e.getMessage());
         }
     }
 
     private synchronized void updateGameState(ServerUpdate update) {
-        pieceController.setPieceList(update.PieceList);
-        pieceController.setMovingPiece(update.SelectedPiece);
-
-
-        if(update.SelectedPiece == null) {
-            pieceController.calculatePossibleMoves(null);
-        }
-
-        if(update.SelectedPiece != null && update.SelectedPiece.Color == update.ClientColor) {
-            pieceController.calculatePossibleMoves(update.SelectedPiece);
-        }
+        pieceController.setPieceList(update.PieceList());
+        pieceController.setMovingPiece(update.SelectedPiece());
+        pieceController.setPossibleMoves(update.PossibleMoves());
+        pieceController.setClientColor(update.ClientColor());
+        pieceController.setTurnColor(update.TurnColor());
 
         boardPanel.repaint();
     }
