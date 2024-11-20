@@ -89,6 +89,19 @@ public class GameServer {
                     else {
                         logger.severe("Move received from internal client ID: " + clientId + " with client color " + clientColor);
                     }
+
+                    // Check for game end conditions
+                    PieceColor loserColor = gameLogic.detectCheckmate();
+                    if (loserColor != null) {
+                        broadcastGameOver((loserColor == PieceColor.BLACK) ? "White" : "Black");
+                        break;
+                    }
+
+                    PieceColor stalemateColor = gameLogic.detectStalemate();
+                    if (stalemateColor != null) {
+                        broadcastGameOver("Stalemate");
+                        break;
+                    }
                 }
             } catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();
@@ -104,7 +117,7 @@ public class GameServer {
                 client.out.writeObject(new ServerUpdate(
                         list,
                         gameLogic.getMovingPiece(),
-                        clientColor
+                        client.clientColor
                 ));
             }
         }

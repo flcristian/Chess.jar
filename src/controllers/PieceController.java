@@ -171,6 +171,24 @@ public class PieceController {
         }
     }
 
+    public void calculatePossibleMoves(Piece piece) {
+        if(piece == null) {
+            PossibleMoves.clear();
+            return;
+        }
+
+        PossibleMoves.clear();
+
+        for (int x = 0; x < 8; x++) {
+            for (int y = 0; y < 8; y++) {
+                Position targetPosition = new Position(x, y);
+                if (!targetPosition.equals(piece.Position) && isValidMove(piece, targetPosition)) {
+                    PossibleMoves.add(targetPosition);
+                }
+            }
+        }
+    }
+
     // PRIVATE METHODS
 
     private static Piece getPromotionPiece(Pawn pawn, Position newPosition, PieceType selectedType) {
@@ -395,24 +413,6 @@ public class PieceController {
         capturedPiece.ifPresent(pieceList::add);
 
         return kingInCheck;
-    }
-
-    public void calculatePossibleMoves(Piece piece) {
-        if(piece == null) {
-            PossibleMoves.clear();
-            return;
-        }
-
-        PossibleMoves.clear();
-
-        for (int x = 0; x < 8; x++) {
-            for (int y = 0; y < 8; y++) {
-                Position targetPosition = new Position(x, y);
-                if (!targetPosition.equals(piece.Position) && isValidMove(piece, targetPosition)) {
-                    PossibleMoves.add(targetPosition);
-                }
-            }
-        }
     }
 
     private boolean isKingInCheckmate(PieceColor kingColor) {

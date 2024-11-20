@@ -87,7 +87,12 @@ public class GameClient {
         pieceController.setPieceList(update.PieceList);
         pieceController.setMovingPiece(update.SelectedPiece);
 
-        if(update.SelectedPiece.Color == update.ClientColor) {
+
+        if(update.SelectedPiece == null) {
+            pieceController.calculatePossibleMoves(null);
+        }
+
+        if(update.SelectedPiece != null && update.SelectedPiece.Color == update.ClientColor) {
             pieceController.calculatePossibleMoves(update.SelectedPiece);
         }
 
