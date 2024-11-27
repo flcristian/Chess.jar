@@ -12,6 +12,7 @@ public record ServerUpdate(
         Piece SelectedPiece,
         List<Position> PossibleMoves,
         PieceColor ClientColor,
-        PieceColor TurnColor
+        PieceColor TurnColor,
+        PieceColor PromotionColor
 ) implements Serializable {
 }

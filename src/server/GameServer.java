@@ -4,6 +4,8 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
+import enums.PieceType;
+import exceptions.ClientHandlerInitializationException;
 import models.pieces.Piece;
 import models.utils.Position;
 import controllers.PieceController;
@@ -29,7 +31,6 @@ public class GameServer {
 
     public void start() {
         try {
-            // Get the local IP address
             String localIpAddress = getLocalIPv4Address();
             ServerSocket serverSocket = new ServerSocket(PORT);
 
@@ -89,47 +90,78 @@ public class GameServer {
                 in = new ObjectInputStream(socket.getInputStream());
                 logger.debug("New client connected with internal ID: " + clientId);
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new ClientHandlerInitializationException("Error initializing ClientHandler", e);
             }
         }
 
         @Override
         public void run() {
             try {
-                out.writeObject(new ServerUpdate(gameLogic.getPieceList(), null, gameLogic.PossibleMoves, clientColor, gameLogic.getTurnColor()));
+                out.writeObject(new ServerUpdate(
+                        gameLogic.getPieceList(),
+                        null,
+                        gameLogic.PossibleMoves,
+                        clientColor,
+                        gameLogic.getTurnColor(),
+                        null
+                ));
 
                 while (true) {
-                    // Receive move from client
-                    Position position = (Position) in.readObject();
+                    Object received = in.readObject();
 
-                    // Process move
-                    if(gameLogic.getTurnColor() == clientColor) {
-                        logger.warning("Move received from internal client ID: " + clientId + " with client color " + clientColor);
-                        gameLogic.tryMovePiece(position);
-
-                        // Broadcast updated state to all clients
+                    if (gameLogic.isPromotionInProgress()) {
                         broadcastServerUpdate();
                     }
-                    else {
-                        logger.severe("Move received from internal client ID: " + clientId + " with client color " + clientColor);
+
+                    if (received instanceof PromotionUpdate(PieceType promotedPieceType)) {
+                        logger.warning("Promotion selection received: " + clientId + " with client color " + clientColor);
+                        handlePromotion(promotedPieceType);
+
+                        broadcastServerUpdate();
+
+                        if (checkAndBroadcastEndGame()) { break; }
+
+                        continue;
                     }
 
-                    // Check for game end conditions
-                    PieceColor loserColor = gameLogic.detectCheckmate();
-                    if (loserColor != null) {
-                        broadcastGameOver((loserColor == PieceColor.BLACK) ? "White" : "Black");
-                        break;
-                    }
+                    if(received instanceof Position position) {
+                        if(gameLogic.getTurnColor() == clientColor) {
+                            logger.warning("Move received from internal client ID: " + clientId + " with client color " + clientColor);
+                            gameLogic.tryMovePiece(position);
 
-                    PieceColor stalemateColor = gameLogic.detectStalemate();
-                    if (stalemateColor != null) {
-                        broadcastGameOver("Stalemate");
-                        break;
+                            broadcastServerUpdate();
+
+                            if (checkAndBroadcastEndGame()) { break; }
+                        }
+                        else {
+                            logger.severe("Move received from internal client ID: " + clientId + " with client color " + clientColor);
+                        }
                     }
                 }
             } catch (IOException | ClassNotFoundException e) {
                 logger.severe(e.getMessage());
             }
+        }
+
+        private boolean checkAndBroadcastEndGame() throws IOException {
+            PieceColor loserColor = gameLogic.detectCheckmate();
+            if (loserColor != null) {
+                broadcastGameOver((loserColor == PieceColor.BLACK) ? "White" : "Black");
+                return true;
+            }
+
+            PieceColor stalemateColor = gameLogic.detectStalemate();
+            if (stalemateColor != null) {
+                broadcastGameOver("Stalemate");
+                return true;
+            }
+
+            return false;
+        }
+
+        private void handlePromotion(PieceType promotedPieceType) throws IOException {
+            gameLogic.completePawnPromotion(promotedPieceType);
+            broadcastServerUpdate();
         }
 
         private void broadcastServerUpdate() throws IOException {
@@ -147,7 +179,8 @@ public class GameServer {
                         gameLogic.getMovingPiece(),
                         possibleMovesList,
                         client.clientColor,
-                        gameLogic.getTurnColor()
+                        gameLogic.getTurnColor(),
+                        gameLogic.isPromotionInProgress() ? gameLogic.getPromotionColor() : null
                 ));
             }
         }

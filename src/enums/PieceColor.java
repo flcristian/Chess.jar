@@ -8,10 +8,10 @@ public enum PieceColor {
     WHITE, BLACK;
 
     public Color getColor() {
-        return this == WHITE ? Globals.PIECE_COLOR_WHITE : Globals.PIECE_COLOR_BLACK;
+        return this == WHITE ? Globals.COLOR_WHITE_PIECE : Globals.COLOR_BLACK_PIECE;
     }
 
     public Color getOutlineColor() {
-        return this == BLACK ? Globals.PIECE_COLOR_WHITE : Globals.PIECE_COLOR_BLACK;
+        return this == BLACK ? Globals.COLOR_WHITE_PIECE : Globals.COLOR_BLACK_PIECE;
     }
 }

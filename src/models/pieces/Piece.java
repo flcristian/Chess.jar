@@ -11,13 +11,13 @@ public abstract class Piece implements Cloneable, Serializable {
     public final PieceType Type;
     public Position Position;
 
-    public Piece(PieceColor color, PieceType type, int x, int y) {
+    protected Piece(PieceColor color, PieceType type, int x, int y) {
         Color = color;
         Type = type;
         Position = new Position(x, y);
     }
 
-    public Piece(PieceColor color, PieceType type, Position position) {
+    protected Piece(PieceColor color, PieceType type, Position position) {
         Color = color;
         Type = type;
         Position = new Position(position.x(), position.y());
@@ -31,6 +31,11 @@ public abstract class Piece implements Cloneable, Serializable {
             return p.Position.equals(Position) && p.Color.equals(Color) && p.Type.equals(Type);
         }
         return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Position.hashCode() + Color.hashCode() + Type.hashCode();
     }
 
     public abstract Piece clone();

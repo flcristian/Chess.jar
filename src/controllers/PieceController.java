@@ -2,11 +2,11 @@ package controllers;
 
 import enums.PieceColor;
 import enums.PieceType;
-import menus.PromotionDialog;
 import models.pieces.*;
 import models.utils.Position;
+import panels.BoardPanel;
+import panels.BoardPanelSingleton;
 import utils.ColorLogger;
-import windows.GameWindow;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +24,8 @@ public class PieceController {
     private PieceColor turnColor;
     private List<MovingPieceChangeListener> movingPieceChangeListeners;
     private Position enPassantTarget;
+    private boolean promotionInProgress;
+    private PieceColor promotionColor;
 
     public List<Position> PossibleMoves;
 
@@ -77,6 +79,12 @@ public class PieceController {
     public PieceColor getClientColor() { return this.clientColor; }
 
     public void setClientColor(PieceColor clientColor) { this.clientColor = clientColor; }
+
+    public boolean isPromotionInProgress() { return promotionInProgress; }
+
+    public void setPromotionInProgress(boolean promotionInProgress) { this.promotionInProgress = promotionInProgress; }
+
+    public PieceColor getPromotionColor() { return promotionColor; }
 
     // METHODS
 
@@ -171,19 +179,56 @@ public class PieceController {
 
         if (isAtEndRow) {
             logger.info(pawn + " can promote.");
+            promotionInProgress = true;
+            promotionColor = pawn.Color;
 
-            PromotionDialog dialog = new PromotionDialog(GameWindow.WINDOW, pawn.Color);
-            dialog.setVisible(true);
+            BoardPanel boardPanel = BoardPanelSingleton.getInstance();
+            boardPanel.triggerPromotion(pawn.Color, selectedType -> {
+                if (selectedType != null) {
+                    turnColor = turnColor.equals(PieceColor.BLACK) ? PieceColor.WHITE : PieceColor.BLACK;
 
-            PieceType selectedType = dialog.getSelectedPieceType();
-            if (selectedType != null) {
-                Piece newPiece = getPromotionPiece(pawn, newPosition, selectedType);
+                    Piece newPiece = createPromotionPiece(pawn, selectedType);
 
-                pieceList.remove(pawn);
-                pieceList.add(newPiece);
+                    pieceList.remove(pawn);
+                    pieceList.add(newPiece);
 
-                notifyMovingPieceChangeListeners();
-            }
+                    promotionInProgress = false;
+                    promotionColor = null;
+                    notifyMovingPieceChangeListeners();
+                }
+            });
+        }
+    }
+
+    private Piece createPromotionPiece(Piece pawn, PieceType selectedType) {
+        return switch (selectedType) {
+            case QUEEN -> new Queen(pawn.Color, pawn.Position);
+            case ROOK -> new Rook(pawn.Color, pawn.Position);
+            case BISHOP -> new Bishop(pawn.Color, pawn.Position);
+            case KNIGHT -> new Knight(pawn.Color, pawn.Position);
+            default -> throw new IllegalArgumentException("Invalid promotion type: " + selectedType);
+        };
+    }
+
+    public void completePawnPromotion(PieceType selectedType) {
+        Optional<Piece> promotionPawn = pieceList.stream()
+                .filter(p -> p.Type == PieceType.PAWN &&
+                        ((p.Color == PieceColor.WHITE && p.Position.y() == 0) ||
+                                (p.Color == PieceColor.BLACK && p.Position.y() == 7)))
+                .findFirst();
+
+        if (promotionPawn.isPresent()) {
+            Piece pawn = promotionPawn.get();
+            Piece newPiece = createPromotionPiece(pawn, selectedType);
+
+            pieceList.remove(pawn);
+            pieceList.add(newPiece);
+
+            promotionInProgress = false;
+            promotionColor = null;
+
+            turnColor = turnColor.equals(PieceColor.BLACK) ? PieceColor.WHITE : PieceColor.BLACK;
+            calculatePossibleMoves(movingPiece);
         }
     }
 
@@ -206,19 +251,14 @@ public class PieceController {
         }
     }
 
-    // PRIVATE METHODS
-
-    private static Piece getPromotionPiece(Pawn pawn, Position newPosition, PieceType selectedType) {
-        Piece newPiece;
-        switch (selectedType) {
-            case QUEEN -> newPiece = new Queen(pawn.Color, newPosition.x(), newPosition.y());
-            case ROOK -> newPiece = new Rook(pawn.Color, newPosition.x(), newPosition.y());
-            case BISHOP -> newPiece = new Bishop(pawn.Color, newPosition.x(), newPosition.y());
-            case KNIGHT -> newPiece = new Knight(pawn.Color, newPosition.x(), newPosition.y());
-            default -> throw new IllegalStateException("Unexpected piece type: " + selectedType);
-        }
-        return newPiece;
+    public void cancelMovement() {
+        movingPiece = null;
+        PossibleMoves.clear();
+        notifyMovingPieceChangeListeners();
+        logger.info("Cancelled movement.");
     }
+
+    // PRIVATE METHODS
 
     private boolean isCastlingMove(Piece piece, Position newPosition) {
         if (!(piece instanceof King) || hasMoved.contains(piece)) {
@@ -325,13 +365,6 @@ public class PieceController {
         logger.info("En Passant Target: " + enPassantTarget);
     }
 
-    private void cancelMovement() {
-        movingPiece = null;
-        PossibleMoves.clear();
-        notifyMovingPieceChangeListeners();
-        logger.info("Cancelled movement.");
-    }
-
     private void capturePiece(Piece capturedPiece) {
         pieceList.remove(capturedPiece);
         logger.info(capturedPiece.Color + " " + capturedPiece.Type + " captured.");
@@ -342,10 +375,13 @@ public class PieceController {
         if (piece instanceof Pawn pawn) {
             handlePawnPromotion(pawn, position);
         }
-        movingPiece = null;
-        PossibleMoves.clear();
-        notifyMovingPieceChangeListeners();
-        turnColor = turnColor.equals(PieceColor.BLACK) ? PieceColor.WHITE : PieceColor.BLACK;
+
+        if (!promotionInProgress) {
+            movingPiece = null;
+            PossibleMoves.clear();
+            notifyMovingPieceChangeListeners();
+            turnColor = turnColor.equals(PieceColor.BLACK) ? PieceColor.WHITE : PieceColor.BLACK;
+        }
     }
 
     private void capturePieceAtPosition(Position position) {
@@ -468,8 +504,8 @@ public class PieceController {
         }
 
         for (Piece piece : pieceList) {
-            if (piece.Color == color) {
-                if (hasValidEscapeMove(piece)) return false;
+            if (piece.Color == color && hasValidEscapeMove(piece)) {
+                return false;
             }
         }
 

@@ -1,7 +1,6 @@
 package server;
 
 import javax.swing.*;
-import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.*;
@@ -14,6 +13,8 @@ import controllers.PieceController;
 import panels.BoardPanel;
 import panels.BoardPanelSingleton;
 import utils.ColorLogger;
+import enums.PieceType;
+import enums.PieceColor;
 
 public class GameClient {
     private final ColorLogger logger;
@@ -22,6 +23,7 @@ public class GameClient {
     private ObjectInputStream in;
     private BoardPanel boardPanel;
     private PieceController pieceController;
+    private boolean isPromotionInProgress;
 
     public GameClient(String serverAddress, int port) {
         logger = new ColorLogger(GameClient.class);
@@ -46,22 +48,55 @@ public class GameClient {
         JFrame window = new JFrame("Chess Network Client");
         boardPanel = BoardPanelSingleton.getInstance();
         pieceController = PieceControllerSingleton.getInstance();
+        isPromotionInProgress = false;
 
         window.setContentPane(boardPanel);
-        window.setSize(Globals.WINDOW_SIZE, Globals.WINDOW_SIZE + 30);
+        window.setSize(Globals.SIZE_BOARD_PANEL + 15, Globals.SIZE_BOARD_PANEL + 30);
         window.setResizable(false);
-        window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        window.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
         boardPanel.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                int x = e.getX() / Globals.SQUARE_SIZE;
-                int y = e.getY() / Globals.SQUARE_SIZE;
-                sendMoveToServer(new Position(x, y));
+                int x = e.getX();
+                int y = e.getY();
+
+                if (isPromotionInProgress) {
+                    handlePromotionSelection(x, y);
+                } else {
+                    Position position = new Position(x / Globals.SIZE_TILE, y / Globals.SIZE_TILE);
+                    sendMoveToServer(position);
+                }
             }
         });
 
         window.setVisible(true);
+    }
+
+    private void handlePromotionSelection(int x, int y) {
+        int dialogWidth = Globals.SIZE_TILE * 4;
+        int panelWidth = Globals.SIZE_BOARD_PANEL;
+        int dialogX = (panelWidth - dialogWidth) / 2;
+        int dialogY = (Globals.SIZE_BOARD_PANEL - Globals.SIZE_TILE) / 2;
+
+        if (x >= dialogX && x < dialogX + dialogWidth &&
+                y >= dialogY && y < dialogY + Globals.SIZE_TILE) {
+
+            int squareClicked = (x - dialogX) / Globals.SIZE_TILE;
+
+            try {
+                PieceType selectedType = switch (squareClicked) {
+                    case 0 -> PieceType.ROOK;
+                    case 1 -> PieceType.KNIGHT;
+                    case 2 -> PieceType.BISHOP;
+                    case 3 -> PieceType.QUEEN;
+                    default -> throw new IllegalArgumentException("Invalid promotion selection");
+                };
+                out.writeObject(new PromotionUpdate(selectedType));
+            } catch (IOException ioException) {
+                logger.severe("Error sending promotion: " + ioException.getMessage());
+            }
+        }
     }
 
     private void startListening() {
@@ -72,8 +107,12 @@ public class GameClient {
 
                     if (received instanceof ServerUpdate serverUpdate) {
                         updateGameState(serverUpdate);
-                    } else if (received instanceof String receivedString && receivedString.startsWith("GAME_OVER")) {
-                        handleGameOver(receivedString);
+                    } else if (received instanceof String receivedString) {
+                        if (receivedString.startsWith("GAME_OVER")) {
+                            handleGameOver(receivedString);
+                        } else if (receivedString.startsWith("PROMOTION")) {
+                            handleServerPromotion(receivedString);
+                        }
                     }
                 }
             } catch (IOException | ClassNotFoundException e) {
@@ -84,6 +123,14 @@ public class GameClient {
                         JOptionPane.ERROR_MESSAGE);
             }
         }).start();
+    }
+
+    private void handleServerPromotion(String promotionMessage) {
+        PieceColor promotionColor = promotionMessage.contains("WHITE") ? PieceColor.WHITE : PieceColor.BLACK;
+
+        if (promotionColor == pieceController.getClientColor()) {
+            boardPanel.triggerPromotion(promotionColor, null);
+        }
     }
 
     private void sendMoveToServer(Position position) {
@@ -100,6 +147,15 @@ public class GameClient {
         pieceController.setPossibleMoves(update.PossibleMoves());
         pieceController.setClientColor(update.ClientColor());
         pieceController.setTurnColor(update.TurnColor());
+
+        PieceColor promotionColor = update.PromotionColor();
+        if (promotionColor != null && promotionColor == update.ClientColor()) {
+            isPromotionInProgress = true;
+            boardPanel.triggerPromotion(promotionColor, null);
+        } else if (promotionColor == null && isPromotionInProgress) {
+            boardPanel.closePromotionDialogue();
+            isPromotionInProgress = false;
+        }
 
         boardPanel.repaint();
     }

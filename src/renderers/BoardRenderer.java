@@ -9,14 +9,14 @@ import panels.BoardPanelSingleton;
 import java.awt.*;
 
 public class BoardRenderer {
-    public void RenderBoard() {
+    public void renderBoard() {
         Graphics2D g2d = BoardPanelSingleton.getInstance().G2D;
 
         boolean colorSwitcher = true;
         for(int i = 0; i < 8; i++) {
             for(int j = 0; j < 8; j++) {
-                g2d.setColor(colorSwitcher ? Globals.BOARD_COLOR_WHITE : Globals.BOARD_COLOR_BLACK);
-                g2d.fillRect(i * Globals.SQUARE_SIZE, j * Globals.SQUARE_SIZE, Globals.SQUARE_SIZE, Globals.SQUARE_SIZE);
+                g2d.setColor(colorSwitcher ? Globals.COLOR_WHITE_TILE : Globals.COLOR_BLACK_TILE);
+                g2d.fillRect(i * Globals.SIZE_TILE, j * Globals.SIZE_TILE, Globals.SIZE_TILE, Globals.SIZE_TILE);
                 colorSwitcher = !colorSwitcher;
             }
             colorSwitcher = !colorSwitcher;
@@ -26,7 +26,7 @@ public class BoardRenderer {
         if(pieceController.getTurnColor() == pieceController.getClientColor()) {
             for(Position position : pieceController.PossibleMoves) {
                 g2d.setColor(new Color(0, 255, 0, (int)(0.3 * 255)));
-                g2d.fillRect(position.x() * Globals.SQUARE_SIZE, position.y() * Globals.SQUARE_SIZE, Globals.SQUARE_SIZE, Globals.SQUARE_SIZE);
+                g2d.fillRect(position.x() * Globals.SIZE_TILE, position.y() * Globals.SIZE_TILE, Globals.SIZE_TILE, Globals.SIZE_TILE);
             }
         }
     }
